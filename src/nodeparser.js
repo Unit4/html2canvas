@@ -72,7 +72,7 @@ NodeParser.prototype.calculateOverflowClips = function() {
                 container.appendToDOM();
             }
             container.borders = this.parseBorders(container);
-            var clip = (container.css('overflow') === "hidden") ? [container.borders.clip] : [];
+			var clip = (container.css('overflow') !== "visible") ? [container.borders.clip] : [];
             var cssClip = container.parseClip();
             if (cssClip && ["absolute", "fixed"].indexOf(container.css('position')) !== -1) {
                 clip.push([["rect",
@@ -83,7 +83,7 @@ NodeParser.prototype.calculateOverflowClips = function() {
                 ]]);
             }
             container.clip = hasParentClip(container) ? container.parent.clip.concat(clip) : clip;
-            container.backgroundClip = (container.css('overflow') !== "hidden") ? container.clip.concat([container.borders.clip]) : container.clip;
+			container.backgroundClip = (container.css('overflow') === "visible") ? container.clip.concat([container.borders.clip]) : container.clip;
             if (isPseudoElement(container)) {
                 container.cleanDOM();
             }

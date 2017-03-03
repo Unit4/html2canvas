@@ -17,6 +17,14 @@
     <iframe src="iframe1.htm" style="height: 350px; width: 450px; border: 0;" scrolling="no" id="frame1"></iframe>
     <iframe src="iframe2.htm" style="height: 350px; width: 450px; border: 0;" scrolling="yes" id="frame2"></iframe>
 </div>
+<div style="height: 150px; width: 100px; background-color: white"; id="container">
+    <div style="height: 100px; width: 100px;" id="overflow">
+        <div style="height: 500px; width: 100px;">
+            <div style="height: 100px; width: 100px; background-color: green" ></div>
+            <div style="height: 400px; width: 100px; background-color: red" ></div>
+        </div>
+    </div>
+</div>
 <script>
     describe("Cropping", function() {
         it("window view with body", function(done) {
@@ -83,6 +91,88 @@
             });
         });
 
+        describe("overflowed content", function() {
+            it("should not occur when overflow style is visible", function(done) {
+                document.querySelector("#overflow").style.overflow = "visible";
+                html2canvas(document.querySelector("#container"), {width: 100, height: 150}).then(function(canvas) {
+                    var expectedCanvas = createCanvas(100, 150),
+                        expectedContext = expectedCanvas.getContext("2d");
+
+                    expectedContext.fillStyle = "green";
+                    expectedContext.fillRect(0, 0, 100, 100);
+
+                    expectedContext.fillStyle = "red";
+                    expectedContext.fillRect(0, 100, 100, 50);
+
+                    matchCanvas(expectedCanvas, canvas);
+
+                    done();
+                }).catch(function(error) {
+                    done(error);
+                });
+            });
+
+            it("when overflow style is hidden", function(done) {
+                document.querySelector("#overflow").style.overflow = "hidden";
+                html2canvas(document.querySelector("#container"), {width: 100, height: 150}).then(function(canvas) {
+                    var expectedCanvas = createCanvas(100, 150),
+                        expectedContext = expectedCanvas.getContext("2d");
+
+                    expectedContext.fillStyle = "green";
+                    expectedContext.fillRect(0, 0, 100, 100);
+
+                    expectedContext.fillStyle = "white";
+                    expectedContext.fillRect(0, 100, 100, 50);
+
+                    matchCanvas(expectedCanvas, canvas);
+
+                    done();
+                }).catch(function(error) {
+                    done(error);
+                });
+            });
+
+            it("when overflow style is auto", function(done) {
+                document.querySelector("#overflow").style.overflow = "auto";
+                html2canvas(document.querySelector("#container"), {width: 100, height: 150}).then(function(canvas) {
+                    var expectedCanvas = createCanvas(100, 150),
+                        expectedContext = expectedCanvas.getContext("2d");
+
+                    expectedContext.fillStyle = "green";
+                    expectedContext.fillRect(0, 0, 100, 100);
+
+                    expectedContext.fillStyle = "white";
+                    expectedContext.fillRect(0, 100, 100, 50);
+
+                    matchCanvas(expectedCanvas, canvas);
+
+                    done();
+                }).catch(function(error) {
+                    done(error);
+                });
+            });
+
+            it("when overflow style is scroll", function(done) {
+                document.querySelector("#overflow").style.overflow = "scroll";
+                html2canvas(document.querySelector("#container"), {width: 100, height: 150}).then(function(canvas) {
+                    var expectedCanvas = createCanvas(100, 150),
+                        expectedContext = expectedCanvas.getContext("2d");
+
+                    expectedContext.fillStyle = "green";
+                    expectedContext.fillRect(0, 0, 100, 100);
+
+                    expectedContext.fillStyle = "white";
+                    expectedContext.fillRect(0, 100, 100, 50);
+
+                    matchCanvas(expectedCanvas, canvas);
+
+                    done();
+                }).catch(function(error) {
+                    done(error);
+                });
+            });
+        });
+
         document.querySelector("#frame2").addEventListener("load", function() {
 
             document.querySelector("#frame2").contentWindow.scrollTo(0, 350);
@@ -117,7 +207,31 @@
             });
         }, false);
     });
+    
+    function createCanvas(width, height) {
+        var canvas = document.createElement('canvas');
+        
+        canvas.width = width;
+        canvas.height = height;
 
+        return canvas;
+    }
+
+    function matchCanvas(expectedCanvas, canvas) {
+        var expectedContext = expectedCanvas.getContext("2d"),
+            context = canvas.getContext("2d"),
+            expectedPixels = expectedContext.getImageData(0, 0, expectedCanvas.width, expectedCanvas.height).data,
+            pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        expect(expectedCanvas.width).to.equal(canvas.width);
+        expect(expectedCanvas.height).to.equal(canvas.height);
+
+        for (var i = 0; i < expectedPixels.length; i++) {
+            if (expectedPixels[i] !== pixels[i]) {
+                expect().fail("Canvas pixels do not match");
+            }
+        }
+    }
 
     function validCanvasPixels(canvas) {
         var ctx = canvas.getContext("2d");
