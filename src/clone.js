@@ -30,12 +30,21 @@ function cloneNode(node, javascriptEnabled) {
     }
 
     if (node.nodeType === 1) {
-        clone._scrollTop = node.scrollTop;
-        clone._scrollLeft = node.scrollLeft;
+		var _scrollTopAttr = document.createAttribute('_scrolltop');
+		_scrollTopAttr.value = node.scrollTop;
+		clone.setAttributeNode(_scrollTopAttr);
+
+		var _scrollTopLeft = document.createAttribute('_scrollleft');
+		_scrollTopLeft.value = node.scrollLeft;
+		clone.setAttributeNode(_scrollTopLeft);
+
+		
         if (node.nodeName === "CANVAS") {
             cloneCanvasContents(node, clone);
-        } else if (node.nodeName === "TEXTAREA" || node.nodeName === "SELECT") {
-            clone.value = node.value;
+		} else if (node.nodeName === "INPUT" || node.nodeName === "TEXTAREA" || node.nodeName === "SELECT") {
+			var _valueAttr = document.createAttribute('_value');
+			_valueAttr.value = node.value;
+			clone.setAttributeNode(_valueAttr);
         }
     }
 
@@ -44,9 +53,13 @@ function cloneNode(node, javascriptEnabled) {
 
 function initNode(node) {
     if (node.nodeType === 1) {
-        node.scrollTop = node._scrollTop;
-        node.scrollLeft = node._scrollLeft;
-
+		node.scrollTop = node.getAttributeNode('_scrolltop').value;
+        node.scrollLeft = node.getAttributeNode('_scrollleft').value;
+		
+		if (node.nodeName === "INPUT" || node.nodeName === "TEXTAREA" || node.nodeName === "SELECT") {
+			node.value = node.getAttributeNode('_value').value;
+		}
+		
         var child = node.firstChild;
         while(child) {
             initNode(child);
@@ -94,11 +107,8 @@ module.exports = function(ownerDocument, containerDocument, width, height, optio
             }, 50);
         };
 
-        documentClone.open();
-        documentClone.write("<!DOCTYPE html><html></html>");
-        // Chrome scrolls the parent document for some reason after the write to the cloned window???
-        restoreOwnerScroll(ownerDocument, x, y);
-        documentClone.replaceChild(documentClone.adoptNode(documentElement), documentClone.documentElement);
+        documentClone.open();        
+		documentClone.write(documentElement.outerHTML);
         documentClone.close();
     });
 };
