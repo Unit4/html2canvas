@@ -598,8 +598,8 @@ function cloneNode(node, javascriptEnabled) {
 
 function initNode(node) {
     if (node.nodeType === 1) {
-		node.scrollTop = node.getAttributeNode('_scrolltop').value;
-        node.scrollLeft = node.getAttributeNode('_scrollleft').value;
+		node.scrollTop = node.getAttributeNode('_scrolltop') ? node.getAttributeNode('_scrolltop').value : 0;
+        node.scrollLeft = node.getAttributeNode('_scrollleft') ? node.getAttributeNode('_scrollleft').value : 0;
 		
 		if (node.nodeName === "INPUT" || node.nodeName === "TEXTAREA" || node.nodeName === "SELECT") {
 			node.value = node.getAttributeNode('_value').value;
