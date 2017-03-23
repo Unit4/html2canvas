@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="lib/mocha.css" />
     <script src="../../node_modules/bluebird/js/browser/bluebird.js"></script>
     <script src="../../dist/html2canvas.js"></script>
+    <script src="../../dist/html2canvas.svg.js"></script>
     <script src="../assets/jquery-1.6.2.js"></script>
     <script src="lib/expect.js"></script>
     <script src="lib/mocha.js"></script>
@@ -30,6 +31,11 @@
             background-image:    -moz-linear-gradient(to bottom, #008000, #008000);
             background-image:         linear-gradient(to bottom, #008000, #008000);
         }
+        #utf8-svg-block {
+            width: 10px;
+            height: 10px;
+            background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2210%22%20height%3D%2210%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%20%3Cg%3E%20%20%3Crect%20fill%3D%22%23FF0000%22%20id%3D%22canvas_background%22%20height%3D%2212%22%20width%3D%2212%22%20y%3D%22-1%22%20x%3D%22-1%22%2F%3E%20%3C%2Fg%3E%3C%2Fsvg%3E');
+        }
     </style>
 </head>
 <body>
@@ -39,6 +45,7 @@
 <div id="green-block"></div>
 <div id="background-block"></div>
 <div id="gradient-block"></div>
+<div id="utf8-svg-block"></div>
 <script>
     describe("options.background", function() {
         it("with hexcolor", function(done) {
@@ -98,6 +105,23 @@
             });
         });
 
+        it('with utf8 svg background-image', function(done) {
+            html2canvas(document.querySelector("#utf8-svg-block")).then(function(canvas) {
+                var expectedCanvas = createCanvas(10, 10),
+                    expectedContext = expectedCanvas.getContext("2d"),
+                    expectedAccuracy = 100;
+                
+                expectedContext.fillStyle = "red";
+                expectedContext.fillRect(0, 0, 10, 10);
+
+                matchCanvas(expectedCanvas, canvas, expectedAccuracy);
+
+                done();
+            }).catch(function(error) {
+                done(error);
+            });
+        });
+
         it('with gradient background-image', function(done) {
             html2canvas(document.querySelector("#gradient-block")).then(function(canvas) {
                 expect(canvas.width).to.equal(200);
@@ -109,6 +133,41 @@
             });
         });
     });
+
+    function createCanvas(width, height) {
+        var canvas = document.createElement('canvas');
+        
+        canvas.width = width;
+        canvas.height = height;
+
+        return canvas;
+    }
+
+    function matchCanvas(expectedCanvas, canvas, expectedAccuracy) {
+        var expectedContext = expectedCanvas.getContext("2d"),
+            context = canvas.getContext("2d"),
+            expectedPixels = expectedContext.getImageData(0, 0, expectedCanvas.width, expectedCanvas.height).data,
+            pixels = context.getImageData(0, 0, canvas.width, canvas.height).data,
+            accuracy,
+            fails = 0;
+        
+        expectedAccuracy = expectedAccuracy || 100;
+
+        expect(expectedCanvas.width).to.equal(canvas.width);
+        expect(expectedCanvas.height).to.equal(canvas.height);
+
+        for (var i = 0; i < expectedPixels.length; i++) {
+            if (expectedPixels[i] !== pixels[i]) {
+                fails = fails + Math.abs(expectedPixels[i] - pixels[i])/255;
+            }
+        }
+
+        accuracy = 100 * (1 - fails/expectedPixels.length);
+
+        if (accuracy < expectedAccuracy) {
+            expect().fail("Canvas pixels do not match. Accuracy: " + accuracy.toFixed(2) + "% (Expected: " + expectedAccuracy.toFixed(2) + "%)");
+        }
+    }
 
     function validCanvasPixels(canvas) {
         var ctx = canvas.getContext("2d");

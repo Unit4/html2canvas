@@ -3327,11 +3327,17 @@ SVGContainer.prototype.hasFabric = function() {
 };
 
 SVGContainer.prototype.inlineFormatting = function(src) {
-    return (/^data:image\/svg\+xml;base64,/.test(src)) ? this.decode64(this.removeContentType(src)) : this.removeContentType(src);
+	if (/^data:image\/svg\+xml;base64,/.test(src)) {
+		return this.decode64(this.removeContentType(src));
+	} else if (/^data:image\/svg\+xml;charset=utf-8,/.test(src)) {
+		return decodeURIComponent(this.removeContentType(src));
+	} else {
+		return this.removeContentType(src);
+    }
 };
 
 SVGContainer.prototype.removeContentType = function(src) {
-    return src.replace(/^data:image\/svg\+xml(;base64)?,/,'');
+	return src.replace(/^data:image\/svg\+xml(;[^,]+)?,/,'');
 };
 
 SVGContainer.prototype.isInline = function(src) {
