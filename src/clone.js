@@ -23,7 +23,14 @@ function cloneNode(node, javascriptEnabled) {
 
     var child = node.firstChild;
     while(child) {
-        if (javascriptEnabled === true || child.nodeType !== 1 || child.nodeName !== 'SCRIPT') {
+        if (child.nodeName === 'IFRAME' || child.nodeName === 'FRAME') {
+            var replacingDiv = document.createElement('div');
+
+            replacingDiv.appendChild(cloneNode(child.contentDocument.head));
+            replacingDiv.appendChild(cloneNode(child.contentDocument.body));
+
+            clone.appendChild(replacingDiv);
+        } else if (javascriptEnabled === true || child.nodeType !== 1 || child.nodeName !== 'SCRIPT') {
             clone.appendChild(cloneNode(child, javascriptEnabled));
         }
         child = child.nextSibling;
@@ -65,79 +72,6 @@ function initNode(node) {
             initNode(child);
             child = child.nextSibling;
         }
-    }
-}
-
-function replaceExistingIframes(ownerDocument, documentElement, documentClone) {
-    var parentId,
-        parentIframeOriginal,
-        parentIframeCloned,
-        iframeOriginal,
-        iframeCloned;
-
-    Array.prototype.forEach.call(documentElement.querySelectorAll('iframe'), function (iframeCopied) {
-        var iframeCopiedId = iframeCopied.id;
-
-        if (iframeCopiedId !== 'html2canvascontainer') {
-            parentId = iframeCopied.parentNode.id;
-            parentIframeOriginal = ownerDocument.getElementById(parentId);
-			if(parentIframeOriginal){
-				parentIframeCloned = cloneNode(parentIframeOriginal);
-
-				iframeOriginal = retrieveOriginalIframe(ownerDocument, iframeCopiedId, iframeCopied.name);
-				if (iframeOriginal) {
-					iframeCloned = cloneNode(iframeOriginal.contentDocument.body);
-				}
-
-				iframeCopied.appendChild(iframeCloned);        
-				
-				replaceExistingFramesets(documentClone, iframeOriginal, parentIframeCloned, iframeCopied, frames);
-			}
-        }
-    });    
-}
-
-function replaceExistingFramesets(documentClone, iframeOriginal, parentIframeCloned, iframeCopied, frames) {
-    var existingFrames;
-
-    Array.prototype.forEach.call(iframeCopied.querySelectorAll('frameset'), function (frameset) {
-        existingFrames = frameset.querySelectorAll('frame');
-        replaceExistingFrames(documentClone, iframeOriginal, parentIframeCloned, iframeCopied, existingFrames);
-    });
-}
-
-function replaceExistingFrames(documentClone, iframeOriginal, parentIframeCloned, iframeCopied, existingFrames) {
-    var contentContainerFrame,
-        htmlElement,
-        frameClonedHead,
-        frameClonedBody,
-        nodeToReplace;
-
-    Array.prototype.forEach.call(existingFrames, function (frame) {
-        frame.src = '';
-
-        if (frame.name === 'contentcontainer') {
-            contentContainerFrame = iframeOriginal.contentDocument.body.querySelector('#contentContainerFrame');
-
-            htmlElement = documentClone.createElement("html");
-            frameClonedHead = cloneNode(contentContainerFrame.contentDocument.head);            
-            frameClonedBody = cloneNode(contentContainerFrame.contentDocument.body);
-            htmlElement.appendChild(frameClonedHead);
-            htmlElement.appendChild(frameClonedBody);
-
-            nodeToReplace = documentClone.getElementById(parentIframeCloned.id);
-            nodeToReplace.innerHTML = htmlElement.innerHTML;
-        }
-    });
-}
-
-function retrieveOriginalIframe(ownerDocument, iframeId, iframeName) {
-    if (iframeId !== "") {
-        return ownerDocument.getElementById(iframeId);
-    } else if (iframeName !== "") {
-        return ownerDocument.getElementsByName(iframeName)[0];
-    } else {
-        return null;
     }
 }
 
@@ -183,7 +117,6 @@ module.exports = function(ownerDocument, containerDocument, width, height, optio
 
         documentClone.open();        
 		documentClone.write(documentElement.outerHTML);
-		replaceExistingIframes(ownerDocument, documentElement, documentClone);
         documentClone.close();
     });
 };
