@@ -6,6 +6,19 @@ function restoreOwnerScroll(ownerDocument, x, y) {
     }
 }
 
+function replaceIframeOrFrameWithDiv(frame, clone) {
+    var replacingDiv = document.createElement('div');
+    
+    try {
+        replacingDiv.appendChild(cloneNode(frame.contentDocument.head));
+        replacingDiv.appendChild(cloneNode(frame.contentDocument.body));
+    } catch(error) {
+        log('Unable to clone external iframe/frame contents');
+    }
+
+    clone.appendChild(replacingDiv);
+}
+
 function cloneCanvasContents(canvas, clonedCanvas) {
     try {
         if (clonedCanvas) {
@@ -24,12 +37,7 @@ function cloneNode(node, javascriptEnabled) {
     var child = node.firstChild;
     while(child) {
         if (child.nodeName === 'IFRAME' || child.nodeName === 'FRAME') {
-            var replacingDiv = document.createElement('div');
-
-            replacingDiv.appendChild(cloneNode(child.contentDocument.head));
-            replacingDiv.appendChild(cloneNode(child.contentDocument.body));
-
-            clone.appendChild(replacingDiv);
+            replaceIframeOrFrameWithDiv(child, clone);
         } else if (javascriptEnabled === true || child.nodeType !== 1 || child.nodeName !== 'SCRIPT') {
             clone.appendChild(cloneNode(child, javascriptEnabled));
         }
